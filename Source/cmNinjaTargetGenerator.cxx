@@ -947,28 +947,31 @@ void cmNinjaTargetGenerator::WriteObjectBuildStatement(
     }
     vars["SWIFT_AUXILIARY_SOURCES"] = aux_sources;
 
-    if (const char* name =
-          this->GeneratorTarget->GetProperty("SWIFT_MODULE_NAME")) {
-      vars["SWIFT_MODULE_NAME"] = name;
-    } else {
-      vars["SWIFT_MODULE_NAME"] = this->GeneratorTarget->GetName();
-    }
+    vars["SWIFT_MODULE_NAME"] = [this]() -> std::string {
+      cmGeneratorTarget* target = this->GeneratorTarget;
+      if (const char* name = target->GetProperty("SWIFT_MODULE_NAME"))
+        return name;
+      return target->GetName();
+    }();
 
     cmGeneratorTarget::Names targetNames =
       this->GeneratorTarget->GetLibraryNames(this->GetConfigName());
     vars["SWIFT_LIBRARY_NAME"] = targetNames.Base;
-
-    if (const char* partial = source->GetProperty("SWIFT_PARTIAL_MODULE")) {
-      vars["SWIFT_PARTIAL_MODULE"] = partial;
-    } else {
-      vars["SWIFT_PARTIAL_MODULE"] = objectFileName + ".swiftmodule";
-    }
-
-    if (const char* partial = source->GetProperty("SWIFT_PARTIAL_DOC")) {
-      vars["SWIFT_PARTIAL_DOC"] = partial;
-    } else {
-      vars["SWIFT_PARTIAL_DOC"] = objectFileName + ".swiftdoc";
-    }
+    vars["SWIFT_PARTIAL_MODULE"] = [source, objectFileName]() -> std::string {
+      if (const char* name = source->GetProperty("SWIFT_PARTIAL_MODULE"))
+        return name;
+      return objectFileName + ".swiftmodule";
+    }();
+    vars["SWIFT_PARTIAL_DOC"] = [source, objectFileName]() -> std::string {
+      if (const char* name = source->GetProperty("SWIFT_PARTIAL_MODULE"))
+        return name;
+      return objectFileName + ".swiftmodule";
+    }();
+    vars["SWIFT_PARTIAL_DOC"] = [source, objectFileName]() -> std::string {
+      if (const char* name = source->GetProperty("SWIFT_PARTIAL_DOC"))
+        return name;
+      return objectFileName + ".swiftdoc";
+    }();
   }
 
   if (!this->NeedDepTypeMSVC(language)) {
