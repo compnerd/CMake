@@ -64,6 +64,8 @@ cmNinjaTargetGenerator::cmNinjaTargetGenerator(cmGeneratorTarget* target)
 
 cmNinjaTargetGenerator::~cmNinjaTargetGenerator()
 {
+  if (SwiftOutputFileMap)
+    *SwiftOutputFileMap << '\n' << '}';
 }
 
 cmGeneratedFileStream& cmNinjaTargetGenerator::GetBuildFileStream() const
@@ -932,6 +934,7 @@ void cmNinjaTargetGenerator::WriteObjectBuildStatement(
   vars["FLAGS"] = this->ComputeFlagsForObject(source, language);
   vars["DEFINES"] = this->ComputeDefines(source, language);
   vars["INCLUDES"] = this->ComputeIncludes(source, language);
+
   if (language == "Swift") {
     // The swift compiler needs all the sources besides the one being compiled
     // in order to do the type checking.  List all these "auxiliary" sources.
@@ -993,6 +996,30 @@ void cmNinjaTargetGenerator::WriteObjectBuildStatement(
       vars["DEP_FILE"] = this->GetLocalGenerator()->ConvertToOutputFormat(
         objectFileDir + "/" + dependFileName, cmOutputConverter::SHELL);
     }
+  }
+
+  if (language == "Swift") {
+    std::string swiftTargetDepsPath = [this]() -> std::string {
+      cmGeneratorTarget const* target = this->GeneratorTarget;
+      if (const char* name = target->GetProperty("SWIFT_DEPENDENCIES_FILE"))
+        return name;
+      return target->GetName() + ".swiftdeps";
+    }();
+    std::string swiftDepsPath = [source, objectFileName]() -> std::string {
+      if (const char* name = source->GetProperty("SWIFT_DEPENDENCIES_FILE"))
+        return name;
+      return objectFileName + ".swiftdeps";
+    }();
+    std::string swiftDiaPath = [source, objectFileName]() -> std::string {
+      if (const char* name = source->GetProperty("SWIFT_DIAGNOSTICS_FILE"))
+        return name;
+      return objectFileName + ".dia";
+    }();
+    this->EmitSwiftDependencyInfo(objectDir, swiftTargetDepsPath,
+      this->GetSourceFilePath(source), objectFileName,
+      this->ConvertToNinjaPath(vars["DEP_FILE"]),
+      this->ConvertToNinjaPath(swiftDepsPath),
+      this->ConvertToNinjaPath(swiftDiaPath));
   }
 
   this->ExportObjectCompileCommand(
@@ -1297,6 +1324,35 @@ void cmNinjaTargetGenerator::ExportObjectCompileCommand(
     this->GetLocalGenerator()->BuildCommandLine(compileCmds);
 
   this->GetGlobalGenerator()->AddCXXCompileCommand(cmdLine, sourceFileName);
+}
+
+void cmNinjaTargetGenerator::EmitSwiftDependencyInfo(
+  std::string const& buildFileDir, std::string const& targetSwiftDepsPath,
+  std::string const& sourceFilePath, std::string const& objectFilePath,
+  std::string const& makeDepsPath, std::string const& swiftDepsPath,
+  std::string const& swiftDiagnosticsPath) {
+  auto quoted = [](std::string const& value) -> std::string {
+    return '"' + value + '"';
+  };
+
+  if (!SwiftOutputFileMap) {
+    std::string outputFileMap = buildFileDir + "/output-file-map.json";
+    SwiftOutputFileMap.reset(new cmGeneratedFileStream(outputFileMap));
+
+    *SwiftOutputFileMap << '{' << '\n';
+
+    *SwiftOutputFileMap << "  " << quoted("") << ':' << '{'
+      << quoted("swift-dependencies") << ':' << quoted(targetSwiftDepsPath)
+      << '}';
+  }
+
+  *SwiftOutputFileMap << ',' << '\n';
+  *SwiftOutputFileMap << "  " << quoted(sourceFilePath) << ':' << '{' << '\n'
+    << "    " << quoted("object") << ':' << quoted(objectFilePath) << ',' << '\n'
+    << "    " << quoted("dependencies") << ':' << quoted(makeDepsPath) << ',' << '\n'
+    << "    " << quoted("swift-dependencies") << ':' << quoted(swiftDepsPath) << ',' << '\n'
+    << "    " << quoted("diagnostics") << ':' << quoted(swiftDiagnosticsPath) << '\n'
+    << "  " << '}';
 }
 
 void cmNinjaTargetGenerator::EnsureDirectoryExists(

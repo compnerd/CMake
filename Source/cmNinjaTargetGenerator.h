@@ -127,6 +127,11 @@ protected:
   void WriteObjectBuildStatement(cmSourceFile const* source);
   void WriteTargetDependInfo(std::string const& lang);
 
+  void EmitSwiftDependencyInfo(std::string const& buildFileDir,
+    std::string const& targetSwiftDepsPath, std::string const& sourceFilePath,
+    std::string const& objectFilePath, std::string const& makeDepsPath,
+    std::string const& swiftDepsPath, std::string const& swiftDiagnosticsPath);
+
   void ExportObjectCompileCommand(
     std::string const& language, std::string const& sourceFileName,
     std::string const& objectDir, std::string const& objectFileName,
@@ -168,6 +173,7 @@ private:
   cmLocalNinjaGenerator* LocalGenerator;
   /// List of object files for this target.
   cmNinjaDeps Objects;
+  std::unique_ptr<cmGeneratedFileStream> SwiftOutputFileMap;
   std::map<std::string, cmNinjaDeps> DDIFiles;
   std::vector<cmCustomCommand const*> CustomCommands;
   cmNinjaDeps ExtraFiles;
