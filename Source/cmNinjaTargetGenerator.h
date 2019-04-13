@@ -11,6 +11,7 @@
 #include "cmOSXBundleGenerator.h"
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -153,7 +154,7 @@ protected:
   };
   friend struct MacOSXContentGeneratorType;
 
-  MacOSXContentGeneratorType* MacOSXContentGenerator;
+  std::unique_ptr<MacOSXContentGeneratorType> MacOSXContentGenerator;
   // Properly initialized by sub-classes.
   cmOSXBundleGenerator* OSXBundleGenerator;
   std::set<std::string> MacContentFolders;
