@@ -34,14 +34,13 @@ cmMakefileExecutableTargetGenerator::cmMakefileExecutableTargetGenerator(
   this->TargetNames =
     this->GeneratorTarget->GetExecutableNames(this->ConfigName);
 
-  this->OSXBundleGenerator =
-    new cmOSXBundleGenerator(target, this->ConfigName);
+  this->OSXBundleGenerator.reset(
+    new cmOSXBundleGenerator(target, this->ConfigName));
   this->OSXBundleGenerator->SetMacContentFolders(&this->MacContentFolders);
 }
 
 cmMakefileExecutableTargetGenerator::~cmMakefileExecutableTargetGenerator()
 {
-  delete this->OSXBundleGenerator;
 }
 
 void cmMakefileExecutableTargetGenerator::WriteRuleFiles()

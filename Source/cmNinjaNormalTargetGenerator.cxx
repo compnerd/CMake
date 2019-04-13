@@ -53,14 +53,13 @@ cmNinjaNormalTargetGenerator::cmNinjaNormalTargetGenerator(
     EnsureDirectoryExists(target->GetDirectory(this->GetConfigName()));
   }
 
-  this->OSXBundleGenerator =
-    new cmOSXBundleGenerator(target, this->GetConfigName());
+  this->OSXBundleGenerator.reset(
+    new cmOSXBundleGenerator(target, this->GetConfigName()));
   this->OSXBundleGenerator->SetMacContentFolders(&this->MacContentFolders);
 }
 
 cmNinjaNormalTargetGenerator::~cmNinjaNormalTargetGenerator()
 {
-  delete this->OSXBundleGenerator;
 }
 
 void cmNinjaNormalTargetGenerator::Generate()

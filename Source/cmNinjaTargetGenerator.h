@@ -156,7 +156,7 @@ protected:
 
   std::unique_ptr<MacOSXContentGeneratorType> MacOSXContentGenerator;
   // Properly initialized by sub-classes.
-  cmOSXBundleGenerator* OSXBundleGenerator;
+  std::unique_ptr<cmOSXBundleGenerator> OSXBundleGenerator;
   std::set<std::string> MacContentFolders;
 
   void addPoolNinjaVariable(const std::string& pool_property,

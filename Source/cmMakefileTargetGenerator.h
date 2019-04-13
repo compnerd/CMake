@@ -7,6 +7,7 @@
 
 #include <iosfwd>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -235,7 +236,7 @@ protected:
 
   // macOS content info.
   std::set<std::string> MacContentFolders;
-  cmOSXBundleGenerator* OSXBundleGenerator;
+  std::unique_ptr<cmOSXBundleGenerator> OSXBundleGenerator;
   MacOSXContentGeneratorType* MacOSXContentGenerator;
 };
 
